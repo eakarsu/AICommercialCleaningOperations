@@ -1,0 +1,104 @@
+{
+  "project": "AICommercialCleaningOperations",
+  "marker": "// === Batch 01 Gaps & Frontend Mounts ===",
+  "features": [
+    {
+      "slug": "agentic-operations-coordinator-dispatching-crews-m",
+      "component": "AgenticOperationsCoordinatorDispatchingCrewsMPage",
+      "label": "Agentic operations coordinator dispatching crews, managing exceptions, and updating clients",
+      "endpoint": "/api/cf-agentic-operations-coordinator-dispatching-crews-m",
+      "kind": "cfs"
+    },
+    {
+      "slug": "rag-over-osha-epa-and-chemical-sds-for-compliance-",
+      "component": "RagOverOshaEpaAndChemicalSdsForCompliancePage",
+      "label": "RAG over OSHA, EPA, and chemical SDS for compliance Q&A on-site",
+      "endpoint": "/api/cf-rag-over-osha-epa-and-chemical-sds-for-compliance-",
+      "kind": "cfs"
+    },
+    {
+      "slug": "real-time-iot-sensor-stream-from-cleaning-equipmen",
+      "component": "RealTimeIotSensorStreamFromCleaningEquipmenPage",
+      "label": "Real-time IoT/sensor stream from cleaning equipment with maintenance dispatch",
+      "endpoint": "/api/cf-real-time-iot-sensor-stream-from-cleaning-equipmen",
+      "kind": "cfs"
+    },
+    {
+      "slug": "white-label-deployment-for-franchise-janitorial-br",
+      "component": "WhiteLabelDeploymentForFranchiseJanitorialBrPage",
+      "label": "White-label deployment for franchise janitorial brands",
+      "endpoint": "/api/cf-white-label-deployment-for-franchise-janitorial-br",
+      "kind": "cfs"
+    },
+    {
+      "slug": "0-mounted-chat-style-ai-endpoints-despite-ainew-js",
+      "component": "Gap0MountedChatStyleAiEndpointsDespiteAinewJsPage",
+      "label": "0 mounted /chat-style AI endpoints despite aiNew.js scaffold",
+      "endpoint": "/api/gap-0-mounted-chat-style-ai-endpoints-despite-ainew-js",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-vision-based-pre-post-clean-verification-fro",
+      "component": "NoAiVisionBasedPrePostCleanVerificationFroPage",
+      "label": "No AI vision-based pre/post-clean verification from photos",
+      "endpoint": "/api/gap-no-ai-vision-based-pre-post-clean-verification-fro",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-dynamic-scheduling-vs-travel-time-and-crew-s",
+      "component": "NoAiDynamicSchedulingVsTravelTimeAndCrewSPage",
+      "label": "No AI dynamic scheduling vs. travel-time and crew skills",
+      "endpoint": "/api/gap-no-ai-dynamic-scheduling-vs-travel-time-and-crew-s",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-auto-quote-generator-from-rfp",
+      "component": "NoAiAutoQuoteGeneratorFromRfpPage",
+      "label": "No AI auto-quote generator from RFP",
+      "endpoint": "/api/gap-no-ai-auto-quote-generator-from-rfp",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-ai-safety-incident-classifier",
+      "component": "NoAiSafetyIncidentClassifierPage",
+      "label": "No AI safety incident classifier",
+      "endpoint": "/api/gap-no-ai-safety-incident-classifier",
+      "kind": "gap"
+    },
+    {
+      "slug": "notification-routes-exist-but-no-sms-push-delivery",
+      "component": "NotificationRoutesExistButNoSmsPushDeliveryPage",
+      "label": "Notification routes exist but no SMS/push delivery channel",
+      "endpoint": "/api/gap-notification-routes-exist-but-no-sms-push-delivery",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-direct-accounting-api-client-quickbooks-xero",
+      "component": "NoDirectAccountingApiClientQuickbooksXeroPage",
+      "label": "No direct accounting API client (QuickBooks, Xero)",
+      "endpoint": "/api/gap-no-direct-accounting-api-client-quickbooks-xero",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-gps-clock-in-live-route-optimization-for-crews",
+      "component": "NoGpsClockInLiveRouteOptimizationForCrewsPage",
+      "label": "No GPS clock-in / live route-optimization for crews",
+      "endpoint": "/api/gap-no-gps-clock-in-live-route-optimization-for-crews",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-customer-self-service-portal",
+      "component": "NoCustomerSelfServicePortalPage",
+      "label": "No customer self-service portal",
+      "endpoint": "/api/gap-no-customer-self-service-portal",
+      "kind": "gap"
+    },
+    {
+      "slug": "no-mobile-app-for-cleaning-crews",
+      "component": "NoMobileAppForCleaningCrewsPage",
+      "label": "No mobile app for cleaning crews",
+      "endpoint": "/api/gap-no-mobile-app-for-cleaning-crews",
+      "kind": "gap"
+    }
+  ]
+}

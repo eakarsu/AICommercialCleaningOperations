@@ -22,6 +22,9 @@ import TimeTrackingPage from './pages/TimeTrackingPage';
 import SchedulePage from './pages/SchedulePage';
 import ExpensesPage from './pages/ExpensesPage';
 import ChecklistsPage from './pages/ChecklistsPage';
+import NotificationsPage from './pages/NotificationsPage';
+import WebhooksPage from './pages/WebhooksPage';
+import AIInsightsPage from './pages/AIInsightsPage';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +56,9 @@ const AppContent = () => {
           <Route path="/schedules" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
           <Route path="/checklists" element={<ProtectedRoute><ChecklistsPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/webhooks" element={<ProtectedRoute><WebhooksPage /></ProtectedRoute>} />
+          <Route path="/ai-insights" element={<ProtectedRoute><AIInsightsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

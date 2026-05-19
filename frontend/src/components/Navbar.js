@@ -28,6 +28,10 @@ const Navbar = () => {
     { path: '/schedules', label: 'Scheduling', icon: '📅' },
     { path: '/expenses', label: 'Expense Tracking', icon: '💵' },
     { path: '/checklists', label: 'Checklists', icon: '✔️' },
+    { path: '/notifications', label: 'Notifications', icon: '🔔' },
+    { path: '/webhooks', label: 'Webhooks', icon: '🪝' },
+    { path: '/ai-insights', label: 'AI Insights', icon: '🧠' },
+    { path: '/custom-views', label: 'Cleaning Views', icon: '🧽' },
   ];
 
   return (

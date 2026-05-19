@@ -31,6 +31,7 @@ const Navbar = () => {
     { path: '/notifications', label: 'Notifications', icon: '🔔' },
     { path: '/webhooks', label: 'Webhooks', icon: '🪝' },
     { path: '/ai-insights', label: 'AI Insights', icon: '🧠' },
+    { path: '/custom-views', label: 'Cleaning Views', icon: '🧽' },
   ];
 
   return (

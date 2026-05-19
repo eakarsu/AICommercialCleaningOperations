@@ -25,6 +25,7 @@ import ChecklistsPage from './pages/ChecklistsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import WebhooksPage from './pages/WebhooksPage';
 import AIInsightsPage from './pages/AIInsightsPage';
+import CustomViewsPage from './pages/CustomViewsPage';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute = ({ children }) => {
@@ -59,6 +60,7 @@ const AppContent = () => {
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/webhooks" element={<ProtectedRoute><WebhooksPage /></ProtectedRoute>} />
           <Route path="/ai-insights" element={<ProtectedRoute><AIInsightsPage /></ProtectedRoute>} />
+          <Route path="/custom-views" element={<ProtectedRoute><CustomViewsPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

@@ -31,6 +31,7 @@ app.use('/api/ai', require('./routes/aiNew'));
 // Audit-recommended additions (notifications, webhooks)
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/webhooks', require('./routes/webhooks'));
+app.use('/api/custom-views', require('./routes/customViews'));
 
 // Health check
 app.get('/api/health', (req, res) => {

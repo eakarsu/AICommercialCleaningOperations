@@ -24,7 +24,8 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('admin', 'manager', 'crew_lead'),
     defaultValue: 'manager'
-  }
+  },
+  tenantId: { type: DataTypes.UUID, field: 'tenant_id' }
 }, {
   tableName: 'users',
   timestamps: true

@@ -1,13 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('./config/runtime').validateRuntime();
 
 const sequelize = require('./config/database');
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3001;
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map((value) => value.trim()).filter(Boolean);
+app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.includes(origin)) return callback(null, true); return callback(new Error('Origin not allowed')); }, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
@@ -32,6 +34,7 @@ app.use('/api/ai', require('./routes/aiNew'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/custom-views', require('./routes/customViews'));
+app.use('/api/service-workflow', require('./routes/serviceWorkflow'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -121,8 +124,7 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     console.log('Database connected successfully');
-    await sequelize.sync({ alter: true });
-    console.log('Models synchronized');
+    // Schema changes are explicit and reviewable via scripts/migrate.sh.
 
     
 app.use('/api/ops-coordinator', require('./routes/opsCoordinatorAgent')); // apply pass 6 — audit custom suggestion
@@ -143,15 +145,3 @@ app.listen(PORT, () => {
 
 startServer();
 
-
-// === Batch 01 Gaps & Frontend Mounts ===
-app.use('/api/gap-0-mounted-chat-style-ai-endpoints-despite-ainew-js', require('./routes/gap_0_mounted_chat_style_ai_endpoints_despite_ainew_js'));
-app.use('/api/gap-no-ai-vision-based-pre-post-clean-verification-fro', require('./routes/gap_no_ai_vision_based_pre_post_clean_verification_fro'));
-app.use('/api/gap-no-ai-dynamic-scheduling-vs-travel-time-and-crew-s', require('./routes/gap_no_ai_dynamic_scheduling_vs_travel_time_and_crew_s'));
-app.use('/api/gap-no-ai-auto-quote-generator-from-rfp', require('./routes/gap_no_ai_auto_quote_generator_from_rfp'));
-app.use('/api/gap-no-ai-safety-incident-classifier', require('./routes/gap_no_ai_safety_incident_classifier'));
-app.use('/api/gap-notification-routes-exist-but-no-sms-push-delivery', require('./routes/gap_notification_routes_exist_but_no_sms_push_delivery'));
-app.use('/api/gap-no-direct-accounting-api-client-quickbooks-xero', require('./routes/gap_no_direct_accounting_api_client_quickbooks_xero'));
-app.use('/api/gap-no-gps-clock-in-live-route-optimization-for-crews', require('./routes/gap_no_gps_clock_in_live_route_optimization_for_crews'));
-app.use('/api/gap-no-customer-self-service-portal', require('./routes/gap_no_customer_self_service_portal'));
-app.use('/api/gap-no-mobile-app-for-cleaning-crews', require('./routes/gap_no_mobile_app_for_cleaning_crews'));

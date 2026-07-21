@@ -25,7 +25,8 @@ async function seed() {
     console.log('Database synced (tables recreated)');
 
     // ===== USERS =====
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    if (!process.env.DEMO_ADMIN_PASSWORD || process.env.DEMO_ADMIN_PASSWORD.length < 12) throw new Error('DEMO_ADMIN_PASSWORD (12+ characters) is required');
+    const hashedPassword = await bcrypt.hash(process.env.DEMO_ADMIN_PASSWORD, 10);
     await User.bulkCreate([
       { email: 'admin@cleanops.com', password: hashedPassword, name: 'John Admin', role: 'admin' },
       { email: 'manager@cleanops.com', password: hashedPassword, name: 'Sarah Manager', role: 'manager' },

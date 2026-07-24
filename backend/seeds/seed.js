@@ -335,7 +335,7 @@ async function seed() {
     console.log('Checklists seeded (15)');
 
     console.log('\n✅ All seed data inserted successfully!');
-    console.log('Login credentials: admin@cleanops.com / password123');
+    console.log('Demo login users provisioned from the local environment.');
     process.exit(0);
   } catch (err) {
     console.error('Seed error:', err);

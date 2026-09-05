@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import api from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -10,9 +11,14 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleAutofill = () => {
-    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
-    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+  const handleAutofill = async () => {
+    try {
+      const { data } = await api.get('/auth/demo-credentials');
+      setEmail(data.email);
+      setPassword(data.password);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Demo credentials are unavailable');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -35,7 +41,7 @@ const Login = () => {
         <h1>CleanOps AI</h1>
         <p>AI-Powered Commercial Cleaning Operations</p>
         <button className="autofill-btn" onClick={handleAutofill}>
-          Click to auto-fill demo credentials
+          Auto Fill Demo Credentials
         </button>
         <form onSubmit={handleSubmit}>
           <div className="form-group">

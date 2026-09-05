@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const { transitionService, inspectionScore, reconcile } = require('../domain/serviceWorkflow');
 
 test('requires tamper-verified evidence, inspection, and approval', () => {
-  assert.throws(() => transitionService('submitted', 'accepted', 'worker', { inspectionComplete: true, evidenceVerified: true }), /approval/);
+  assert.throws(() => transitionService('submitted', 'accepted', 'worker', { inspectionComplete: true, evidenceVerified: true, openExceptionCount: 0 }), /approval/);
   assert.throws(() => transitionService('submitted', 'accepted', 'supervisor', { inspectionComplete: true, evidenceVerified: false }), /evidence/);
-  assert.equal(transitionService('submitted', 'accepted', 'supervisor', { inspectionComplete: true, evidenceVerified: true }), 'accepted');
+  assert.equal(transitionService('submitted', 'accepted', 'supervisor', { inspectionComplete: true, evidenceVerified: true, openExceptionCount: 0 }), 'accepted');
 });
 test('scores weighted inspections and fails critical misses', () => {
   assert.deepEqual(inspectionScore([{ id: 'surface', weight: 1, score: 100, critical: false }]), { score: 100, criticalFailures: [], passed: true });

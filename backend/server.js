@@ -16,7 +16,11 @@ app.use(cors({ origin(origin, callback) { if (!origin || allowedOrigins.includes
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
+const createCustomerSelfServiceRouter = require('./routes/customerSelfService');
+const createMobileShellRouter = require('./routes/mobileShell');
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api', createMobileShellRouter(require('./middleware/auth'), require('./db'), {"name":"Cleaning Crew","shortName":"Crew","themeColor":"#0891b2","queries":[{"kind":"todaysJobs","sql":"SELECT id, title, status, scheduled_at FROM work_orders WHERE crew_email = $1 LIMIT 25"}]}));
+app.use('/api', createCustomerSelfServiceRouter(require('./middleware/auth'), require('./db')));
 app.use('/api/routes', require('./routes/routes'));
 app.use('/api/supplies', require('./routes/supplies'));
 app.use('/api/inspections', require('./routes/inspections'));

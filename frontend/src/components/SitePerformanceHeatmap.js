@@ -39,6 +39,9 @@ const SitePerformanceHeatmap = () => {
       <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
         {rows.length} sites x {metrics.length} metrics
       </div>
+      {data.note && (
+        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>{data.note}</div>
+      )}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
@@ -58,6 +61,18 @@ const SitePerformanceHeatmap = () => {
                 <td style={{ padding: 8, color: '#94a3b8', fontSize: 11 }}>{r.industry}</td>
                 {metrics.map(m => {
                   const v = r.values[m];
+                  if (v == null) {
+                    return (
+                      <td key={m} style={{ padding: 4, textAlign: 'center' }}>
+                        <div
+                          title={`${r.site} - ${m}: no data recorded`}
+                          style={{ background: 'rgba(71,85,105,0.4)', color: '#cbd5e1', padding: '8px 4px', borderRadius: 4, fontSize: 11 }}
+                        >
+                          no data
+                        </div>
+                      </td>
+                    );
+                  }
                   return (
                     <td key={m} style={{ padding: 4, textAlign: 'center' }}>
                       <div
@@ -71,7 +86,7 @@ const SitePerformanceHeatmap = () => {
                           fontSize: 13
                         }}
                       >
-                        {v != null ? v : '-'}
+                        {v}
                       </div>
                     </td>
                   );

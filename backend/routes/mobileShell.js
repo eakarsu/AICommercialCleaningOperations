@@ -32,28 +32,24 @@ function createMobileShellRouter(authMiddleware, pool, config) {
 
   router.get('/mobile/today', authMiddleware, async (req, res) => {
     try {
-      const userId = req.user?.id ?? req.user?.email;
-      const email = req.user?.email ?? null;
       const today = new Date().toISOString().slice(0, 10);
+      // Each configured query is bound with [signed-in user's name, today].
+      // The documented date filter is applied in SQL via $2.
+      const bindings = [req.user?.name || null, today];
 
       const items = [];
       for (const q of config.queries || []) {
-        try {
-          const r = await pool.query(q.sql, [email ?? userId ?? null, today]);
-          items.push({ kind: q.kind, count: r.rows.length, rows: r.rows.slice(0, 25) });
-        } catch (e) {
-          // A missing table must not break the whole page.
-          items.push({ kind: q.kind, count: 0, rows: [], unavailable: true });
-        }
+        const r = await pool.query(q.sql, bindings);
+        items.push({ kind: q.kind, count: r.rows.length, rows: r.rows.slice(0, 25) });
       }
 
       res.json({
-        user: email ?? userId ?? null,
+        user: req.user?.name || req.user?.email || null,
         date: today,
         items,
         assumptions: [
-          'Rows are today\'s recorded work for the signed-in user only.',
-          'A missing table is reported as unavailable rather than failing the request.',
+          "Rows are today's recorded work assigned to the signed-in user (work_orders.assigned_crew = user name).",
+          'A failing query returns an HTTP error instead of an empty-but-available result.',
         ],
       });
     } catch (e) {

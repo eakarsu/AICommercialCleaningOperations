@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const pool = require('../db');
 const Schedule = require('../models/Schedule');
 const QualityInspection = require('../models/QualityInspection');
 const Client = require('../models/Client');
@@ -7,15 +8,65 @@ const Checklist = require('../models/Checklist');
 const Incident = require('../models/Incident');
 const router = express.Router();
 
-// In-memory store for service rules (CRUD)
-let serviceRules = [
-  { id: 1, name: 'Daily Office Cleaning', frequency: 'daily', tasks: ['Empty trash bins', 'Vacuum carpets', 'Wipe surfaces', 'Restock restrooms'], property_type: 'office', est_hours: 2, active: true },
-  { id: 2, name: 'Weekly Deep Clean', frequency: 'weekly', tasks: ['Floor scrubbing', 'Window cleaning', 'Detailed dusting', 'Disinfect high-touch'], property_type: 'general', est_hours: 4, active: true },
-  { id: 3, name: 'Medical Facility Sanitation', frequency: 'daily', tasks: ['Disinfect exam rooms', 'Biohazard disposal', 'Sterilize equipment areas', 'OSHA-grade restroom clean'], property_type: 'medical', est_hours: 3, active: true },
-  { id: 4, name: 'Monthly Floor Care', frequency: 'monthly', tasks: ['Strip and wax floors', 'Carpet deep extraction', 'Polish hard surfaces'], property_type: 'retail', est_hours: 6, active: true },
-  { id: 5, name: 'Restaurant Kitchen Detail', frequency: 'weekly', tasks: ['Degrease hoods', 'Sanitize prep areas', 'Clean fryers', 'Floor drains'], property_type: 'restaurant', est_hours: 5, active: true }
+// Service rules live in Postgres (previously process memory, so edits were lost
+// on restart and the UI's "used by scheduling" claim never held).
+const DEFAULT_SERVICE_RULES = [
+  { name: 'Daily Office Cleaning', frequency: 'daily', tasks: ['Empty trash bins', 'Vacuum carpets', 'Wipe surfaces', 'Restock restrooms'], property_type: 'office', est_hours: 2, active: true },
+  { name: 'Weekly Deep Clean', frequency: 'weekly', tasks: ['Floor scrubbing', 'Window cleaning', 'Detailed dusting', 'Disinfect high-touch'], property_type: 'general', est_hours: 4, active: true },
+  { name: 'Medical Facility Sanitation', frequency: 'daily', tasks: ['Disinfect exam rooms', 'Biohazard disposal', 'Sterilize equipment areas', 'OSHA-grade restroom clean'], property_type: 'medical', est_hours: 3, active: true },
+  { name: 'Monthly Floor Care', frequency: 'monthly', tasks: ['Strip and wax floors', 'Carpet deep extraction', 'Polish hard surfaces'], property_type: 'retail', est_hours: 6, active: true },
+  { name: 'Restaurant Kitchen Detail', frequency: 'weekly', tasks: ['Degrease hoods', 'Sanitize prep areas', 'Clean fryers', 'Floor drains'], property_type: 'restaurant', est_hours: 5, active: true }
 ];
-let nextRuleId = 6;
+
+let serviceRulesReady = false;
+async function ensureServiceRulesTable() {
+  if (serviceRulesReady) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS service_rules (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(200) NOT NULL,
+      frequency VARCHAR(50) NOT NULL,
+      tasks JSONB NOT NULL DEFAULT '[]',
+      property_type VARCHAR(50) NOT NULL DEFAULT 'general',
+      est_hours NUMERIC(5,2) NOT NULL DEFAULT 1,
+      active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  const count = await pool.query('SELECT COUNT(*)::int AS c FROM service_rules');
+  if (count.rows[0].c === 0) {
+    for (const rule of DEFAULT_SERVICE_RULES) {
+      await pool.query(
+        `INSERT INTO service_rules (name, frequency, tasks, property_type, est_hours, active)
+         VALUES ($1, $2, $3::jsonb, $4, $5, $6)`,
+        [rule.name, rule.frequency, JSON.stringify(rule.tasks), rule.property_type, rule.est_hours, rule.active]
+      );
+    }
+  }
+  serviceRulesReady = true;
+}
+
+function normalizeTasks(tasks) {
+  if (Array.isArray(tasks)) return tasks.map(t => String(t).trim()).filter(Boolean);
+  if (typeof tasks === 'string') return tasks.split('\n').map(t => t.trim()).filter(Boolean);
+  return [];
+}
+
+// Case-insensitive site matching between a free-text location/client name on a
+// record and the client's company name. Returns false when either side is empty,
+// so missing data never produces a value.
+function normSite(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function matchesSite(candidate, companyName) {
+  const a = normSite(candidate);
+  const b = normSite(companyName);
+  if (!a || !b) return false;
+  if (a.includes(b) || b.includes(a)) return true;
+  const first = b.split(' ')[0];
+  return first.length > 3 && a.includes(first);
+}
 
 // ============== VIZ 1: Shift Schedule Gantt Timeline ==============
 router.get('/shift-gantt', auth, async (req, res) => {
@@ -54,6 +105,10 @@ router.get('/shift-gantt', auth, async (req, res) => {
 });
 
 // ============== VIZ 2: Site Performance Heatmap (site x metric) ==============
+// All metrics come from recorded rows: QualityInspection.overall_score (0-10,
+// scaled to 0-100), Incident severity, Schedule status, Checklist completion
+// and Client.satisfaction_score. Missing data is returned as null ("no data");
+// nothing is derived from row ids.
 router.get('/site-heatmap', auth, async (req, res) => {
   try {
     const [clients, inspections, incidents, schedules, checklists] = await Promise.all([
@@ -64,41 +119,74 @@ router.get('/site-heatmap', auth, async (req, res) => {
       Checklist.findAll()
     ]);
     const metrics = ['Quality', 'Safety', 'On-Time', 'Completion', 'Satisfaction'];
+    const severityPenalty = { minor: 5, moderate: 12, major: 25, critical: 40 };
+
     const rows = clients.map(c => {
-      const clientInspections = inspections.filter(i => (i.client_name || i.location || '').toLowerCase().includes((c.company_name || '').toLowerCase().split(' ')[0]));
-      const clientIncidents = incidents.filter(i => (i.client_name || i.location || '').toLowerCase().includes((c.company_name || '').toLowerCase().split(' ')[0]));
-      const clientSchedules = schedules.filter(s => (s.client_name || '').toLowerCase().includes((c.company_name || '').toLowerCase().split(' ')[0]));
-      const clientChecklists = checklists.filter(cl => (cl.assigned_client || '').toLowerCase().includes((c.company_name || '').toLowerCase().split(' ')[0]));
-      // Quality: avg inspection score (0-100). Default deterministic by id.
-      const qualityRaw = clientInspections.length
-        ? clientInspections.reduce((a, b) => a + (parseFloat(b.score) || 75), 0) / clientInspections.length
-        : 70 + ((c.id * 7) % 25);
-      // Safety: inverse of incidents (100 minus incidents*10)
-      const safety = Math.max(40, 100 - (clientIncidents.length * 12) - ((c.id * 3) % 10));
-      // On-Time: completed vs scheduled
-      const completedSched = clientSchedules.filter(s => s.status === 'completed').length;
-      const onTime = clientSchedules.length
-        ? Math.round((completedSched / clientSchedules.length) * 100)
-        : 60 + ((c.id * 5) % 30);
-      // Completion: checklist avg completion
-      const completion = clientChecklists.length
-        ? Math.round(clientChecklists.reduce((a, b) => a + (b.completion_percentage || 50), 0) / clientChecklists.length)
-        : 55 + ((c.id * 11) % 35);
-      // Satisfaction from client model
-      const satisfaction = c.satisfaction_score ? Math.round(parseFloat(c.satisfaction_score) * 10) : 70 + ((c.id * 9) % 25);
+      const siteInspections = inspections.filter(i => matchesSite(i.location_name, c.company_name));
+      const siteIncidents = incidents.filter(i => matchesSite(i.location, c.company_name));
+      const siteSchedules = schedules.filter(s => matchesSite(s.client_name, c.company_name));
+      const siteChecklists = checklists.filter(cl => matchesSite(cl.assigned_client, c.company_name));
+
+      // Quality: average recorded inspection score (model stores 0-10).
+      const scores = siteInspections
+        .map(i => parseFloat(i.overall_score))
+        .filter(Number.isFinite);
+      const quality = scores.length
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10)
+        : null;
+
+      // Safety: penalty per recorded incident severity; null when no incidents
+      // are on record (absence of records is not evidence of safety).
+      const safety = siteIncidents.length
+        ? Math.max(0, 100 - siteIncidents.reduce((sum, i) => sum + (severityPenalty[i.severity] || 10), 0))
+        : null;
+
+      // On-Time: share of recorded shifts completed (real status values).
+      const completedSchedules = siteSchedules.filter(s => s.status === 'completed').length;
+      const onTime = siteSchedules.length
+        ? Math.round((completedSchedules / siteSchedules.length) * 100)
+        : null;
+
+      // Completion: average recorded checklist completion percentage.
+      const completions = siteChecklists
+        .map(cl => Number(cl.completion_percentage))
+        .filter(Number.isFinite);
+      const completion = completions.length
+        ? Math.round(completions.reduce((a, b) => a + b, 0) / completions.length)
+        : null;
+
+      // Satisfaction: recorded client satisfaction score (0-10 -> 0-100).
+      const satisfaction = c.satisfaction_score != null
+        ? Math.round(parseFloat(c.satisfaction_score) * 10)
+        : null;
+
+      const valueCount = [quality, safety, onTime, completion, satisfaction].filter(v => v != null).length;
       return {
         site: c.company_name,
         industry: c.industry,
         values: {
-          Quality: Math.round(qualityRaw),
-          Safety: Math.round(safety),
+          Quality: quality,
+          Safety: safety,
           'On-Time': onTime,
           Completion: completion,
           Satisfaction: satisfaction
-        }
+        },
+        sampleSizes: {
+          inspections: siteInspections.length,
+          incidents: siteIncidents.length,
+          schedules: siteSchedules.length,
+          checklists: siteChecklists.length
+        },
+        hasData: valueCount > 0
       };
     });
-    res.json({ metrics, rows, generated_at: new Date().toISOString() });
+    res.json({
+      metrics,
+      rows,
+      noDataLabel: 'no data',
+      note: 'Metrics are computed from recorded inspections, incidents, schedules, checklists and client satisfaction scores only.',
+      generated_at: new Date().toISOString()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -198,45 +286,75 @@ router.get('/checklist-pdf/:id?', auth, async (req, res) => {
   }
 });
 
-// ============== NON-VIZ 2: Service Rules Editor (CRUD) ==============
-router.get('/service-rules', auth, (req, res) => {
-  res.json({ rules: serviceRules, count: serviceRules.length });
-});
-
-router.post('/service-rules', auth, (req, res) => {
-  const { name, frequency, tasks, property_type, est_hours, active } = req.body || {};
-  if (!name || !frequency) return res.status(400).json({ error: 'name and frequency required' });
-  const rule = {
-    id: nextRuleId++,
-    name,
-    frequency,
-    tasks: Array.isArray(tasks) ? tasks : (typeof tasks === 'string' ? tasks.split('\n').map(t => t.trim()).filter(Boolean) : []),
-    property_type: property_type || 'general',
-    est_hours: parseFloat(est_hours) || 1,
-    active: active !== false
-  };
-  serviceRules.push(rule);
-  res.status(201).json(rule);
-});
-
-router.put('/service-rules/:id', auth, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const idx = serviceRules.findIndex(r => r.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'rule not found' });
-  const body = req.body || {};
-  if (body.tasks && typeof body.tasks === 'string') {
-    body.tasks = body.tasks.split('\n').map(t => t.trim()).filter(Boolean);
+// ============== NON-VIZ 2: Service Rules Editor (CRUD, persisted) ==============
+router.get('/service-rules', auth, async (req, res) => {
+  try {
+    await ensureServiceRulesTable();
+    const result = await pool.query('SELECT * FROM service_rules ORDER BY id ASC');
+    res.json({ rules: result.rows, count: result.rows.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  serviceRules[idx] = { ...serviceRules[idx], ...body, id };
-  res.json(serviceRules[idx]);
 });
 
-router.delete('/service-rules/:id', auth, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const before = serviceRules.length;
-  serviceRules = serviceRules.filter(r => r.id !== id);
-  if (serviceRules.length === before) return res.status(404).json({ error: 'rule not found' });
-  res.json({ deleted: true, id });
+router.post('/service-rules', auth, async (req, res) => {
+  try {
+    await ensureServiceRulesTable();
+    const { name, frequency, tasks, property_type, est_hours, active } = req.body || {};
+    if (!name || !frequency) return res.status(400).json({ error: 'name and frequency required' });
+    const result = await pool.query(
+      `INSERT INTO service_rules (name, frequency, tasks, property_type, est_hours, active)
+       VALUES ($1, $2, $3::jsonb, $4, $5, $6) RETURNING *`,
+      [name, frequency, JSON.stringify(normalizeTasks(tasks)), property_type || 'general', parseFloat(est_hours) || 1, active !== false]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/service-rules/:id', auth, async (req, res) => {
+  try {
+    await ensureServiceRulesTable();
+    const id = parseInt(req.params.id, 10);
+    const body = req.body || {};
+    const result = await pool.query(
+      `UPDATE service_rules SET
+         name = COALESCE($1, name),
+         frequency = COALESCE($2, frequency),
+         tasks = COALESCE($3::jsonb, tasks),
+         property_type = COALESCE($4, property_type),
+         est_hours = COALESCE($5, est_hours),
+         active = COALESCE($6, active),
+         updated_at = NOW()
+       WHERE id = $7 RETURNING *`,
+      [
+        body.name ?? null,
+        body.frequency ?? null,
+        body.tasks !== undefined ? JSON.stringify(normalizeTasks(body.tasks)) : null,
+        body.property_type ?? null,
+        body.est_hours !== undefined ? (parseFloat(body.est_hours) || 0) : null,
+        body.active ?? null,
+        id
+      ]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'rule not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/service-rules/:id', auth, async (req, res) => {
+  try {
+    await ensureServiceRulesTable();
+    const id = parseInt(req.params.id, 10);
+    const result = await pool.query('DELETE FROM service_rules WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'rule not found' });
+    res.json({ deleted: true, id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

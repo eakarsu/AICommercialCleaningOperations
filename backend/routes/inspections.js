@@ -1,6 +1,8 @@
 const express = require('express');
 const multer = require('multer');
 const https = require('https');
+const { Op } = require('sequelize');
+const sequelize = require('../config/database');
 const QualityInspection = require('../models/QualityInspection');
 const aiService = require('../services/aiService');
 const auth = require('../middleware/auth');
@@ -18,6 +20,65 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Inspection evidence is tenant-scoped (when the signed-in user carries a
+// tenant_id) and mutations require an operations role.
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Insufficient permissions for this action' });
+    }
+    next();
+  };
+}
+
+const WRITABLE_FIELDS = [
+  'location_name', 'inspector_name', 'inspection_date', 'overall_score', 'categories',
+  'photo_urls', 'notes', 'status', 'follow_up_required', 'follow_up_notes'
+];
+
+function pickWritableFields(body) {
+  const out = {};
+  for (const key of WRITABLE_FIELDS) {
+    if (body && body[key] !== undefined) out[key] = body[key];
+  }
+  return out;
+}
+
+// tenant_id is added by migration 002. Detect it once so the route works on
+// databases that have not run the migration yet, and still scopes strictly
+// where the column exists.
+let tenantColumnChecked = false;
+let tenantColumnPresent = false;
+async function tenantColumnExists() {
+  if (!tenantColumnChecked) {
+    const [rows] = await sequelize.query(
+      `SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'quality_inspections' AND column_name = 'tenant_id' LIMIT 1`
+    );
+    tenantColumnPresent = rows.length > 0;
+    tenantColumnChecked = true;
+  }
+  return tenantColumnPresent;
+}
+
+// Sequelize where fragment scoping to the caller's tenant, or null when the
+// caller has no tenant claim or the schema has no tenant column.
+async function tenantScope(req) {
+  if (!req.user || !req.user.tenant_id) return null;
+  if (!(await tenantColumnExists())) return null;
+  return sequelize.where(sequelize.col('tenant_id'), Op.eq, req.user.tenant_id);
+}
+
+async function rowBelongsToTenant(req, id) {
+  if (!req.user || !req.user.tenant_id) return true;
+  if (!(await tenantColumnExists())) return true;
+  const [rows] = await sequelize.query(
+    'SELECT tenant_id FROM quality_inspections WHERE id = :id',
+    { replacements: { id } }
+  );
+  return rows.length > 0 && rows[0].tenant_id === req.user.tenant_id;
+}
 
 function callOpenRouterVision(base64Data, mediaType, inspection) {
   return new Promise((resolve, reject) => {
@@ -84,7 +145,9 @@ router.get('/', auth, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
+    const scope = await tenantScope(req);
     const { count, rows } = await QualityInspection.findAndCountAll({
+      where: scope ? { [Op.and]: [scope] } : {},
       order: [['inspection_date', 'DESC']],
       limit,
       offset
@@ -98,41 +161,56 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const inspection = await QualityInspection.findByPk(req.params.id);
-    if (!inspection) return res.status(404).json({ error: 'Inspection not found' });
+    if (!inspection || !(await rowBelongsToTenant(req, inspection.id))) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
     res.json(inspection);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, requireRole('admin', 'manager', 'crew_lead'), async (req, res) => {
   try {
-    const { location_name, inspector_name, inspection_date, overall_score } = req.body;
+    const fields = pickWritableFields(req.body);
+    const { location_name, inspector_name, inspection_date } = fields;
     if (!location_name) return res.status(400).json({ error: 'location_name is required' });
     if (!inspector_name) return res.status(400).json({ error: 'inspector_name is required' });
     if (!inspection_date) return res.status(400).json({ error: 'inspection_date is required' });
-    const inspection = await QualityInspection.create(req.body);
-    res.status(201).json(inspection);
+    const inspection = await QualityInspection.create(fields);
+    let payload = inspection.toJSON();
+    if (req.user.tenant_id && (await tenantColumnExists())) {
+      await sequelize.query(
+        'UPDATE quality_inspections SET tenant_id = :tenant WHERE id = :id',
+        { replacements: { tenant: req.user.tenant_id, id: inspection.id } }
+      );
+      payload.tenant_id = req.user.tenant_id;
+    }
+    res.status(201).json(payload);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const inspection = await QualityInspection.findByPk(req.params.id);
-    if (!inspection) return res.status(404).json({ error: 'Inspection not found' });
-    await inspection.update(req.body);
+    if (!inspection || !(await rowBelongsToTenant(req, inspection.id))) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
+    await inspection.update(pickWritableFields(req.body));
     res.json(inspection);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const inspection = await QualityInspection.findByPk(req.params.id);
-    if (!inspection) return res.status(404).json({ error: 'Inspection not found' });
+    if (!inspection || !(await rowBelongsToTenant(req, inspection.id))) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
     await inspection.destroy();
     res.json({ message: 'Inspection deleted' });
   } catch (err) {
@@ -141,10 +219,12 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Original text-based analysis
-router.post('/:id/analyze', auth, rateLimiter, async (req, res) => {
+router.post('/:id/analyze', auth, requireRole('admin', 'manager', 'crew_lead'), rateLimiter, async (req, res) => {
   try {
     const inspection = await QualityInspection.findByPk(req.params.id);
-    if (!inspection) return res.status(404).json({ error: 'Inspection not found' });
+    if (!inspection || !(await rowBelongsToTenant(req, inspection.id))) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
 
     const aiResult = await aiService.analyzeQualityPhoto({
       location: inspection.location_name,
@@ -163,12 +243,14 @@ router.post('/:id/analyze', auth, rateLimiter, async (req, res) => {
 });
 
 // Photo upload + vision AI analysis
-router.post('/:id/photo-analysis', auth, rateLimiter, upload.single('photo'), async (req, res) => {
+router.post('/:id/photo-analysis', auth, requireRole('admin', 'manager', 'crew_lead'), rateLimiter, upload.single('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No image file uploaded. Use multipart/form-data with field name "photo".' });
 
     const inspection = await QualityInspection.findByPk(req.params.id);
-    if (!inspection) return res.status(404).json({ error: 'Inspection not found' });
+    if (!inspection || !(await rowBelongsToTenant(req, inspection.id))) {
+      return res.status(404).json({ error: 'Inspection not found' });
+    }
 
     const base64Data = req.file.buffer.toString('base64');
     const mediaType = req.file.mimetype;

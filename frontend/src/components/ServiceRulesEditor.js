@@ -82,7 +82,8 @@ const ServiceRulesEditor = () => {
         <button className="btn btn-primary" onClick={handleNew}>+ New Rule</button>
       </div>
       <p style={{ color: '#94a3b8', fontSize: 13, marginBottom: 16 }}>
-        Define cleaning frequency and task templates per property type. Used by scheduling and checklist generation.
+        Library of cleaning frequency and task templates per property type, persisted in the database.
+        These rules are not yet consumed by scheduling or checklist generation.
       </p>
 
       {loading ? (

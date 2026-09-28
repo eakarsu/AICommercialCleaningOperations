@@ -19,7 +19,7 @@ app.use(express.json({ limit: '10mb' }));
 const createCustomerSelfServiceRouter = require('./routes/customerSelfService');
 const createMobileShellRouter = require('./routes/mobileShell');
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api', createMobileShellRouter(require('./middleware/auth'), require('./db'), {"name":"Cleaning Crew","shortName":"Crew","themeColor":"#0891b2","queries":[{"kind":"todaysJobs","sql":"SELECT id, title, status, scheduled_at FROM work_orders WHERE crew_email = $1 LIMIT 25"}]}));
+app.use('/api', createMobileShellRouter(require('./middleware/auth'), require('./db'), {"name":"Cleaning Crew","shortName":"Crew","themeColor":"#0891b2","queries":[{"kind":"todaysJobs","sql":"SELECT id, title, status, scheduled_date, location, assigned_crew, priority FROM work_orders WHERE scheduled_date = $2::date AND ($1::text IS NULL OR assigned_crew = $1) ORDER BY id ASC LIMIT 25"}]}));
 app.use('/api', createCustomerSelfServiceRouter(require('./middleware/auth'), require('./db')));
 app.use('/api/routes', require('./routes/routes'));
 app.use('/api/supplies', require('./routes/supplies'));

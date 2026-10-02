@@ -27,6 +27,7 @@ import WebhooksPage from './pages/WebhooksPage';
 import AIInsightsPage from './pages/AIInsightsPage';
 import CustomViewsPage from './pages/CustomViewsPage';
 import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 
 import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
 import CodexOperationsFeature from './pages/CodexOperationsFeature';
@@ -41,8 +42,8 @@ const ProtectedRoute = ({ children }) => {
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   return (
-    <div className="app">
-      {isAuthenticated && <Navbar />}
+    <div className="app-shell">
+      {isAuthenticated && <Sidebar user={user} onLogout={handleLogout} />}
       <main className={isAuthenticated ? 'main-content' : ''}>
         <Routes>
         <Route path="/insights/timeline" element={<ProtectedRoute><TimelineView /></ProtectedRoute>} />

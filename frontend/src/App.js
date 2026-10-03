@@ -27,6 +27,7 @@ import WebhooksPage from './pages/WebhooksPage';
 import AIInsightsPage from './pages/AIInsightsPage';
 import CustomViewsPage from './pages/CustomViewsPage';
 import Navbar from './components/Navbar';
+import AppSidebar from './components/AppSidebar';
 
 import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
 import CodexOperationsFeature from './pages/CodexOperationsFeature';
@@ -41,7 +42,8 @@ const ProtectedRoute = ({ children }) => {
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   return (
-    <div className="app">
+    <div className={isAuthenticated ? 'app codex-nav-shell' : 'app'}>
+      {isAuthenticated && <AppSidebar />}
       {isAuthenticated && <Navbar />}
       <main className={isAuthenticated ? 'main-content' : ''}>
         <Routes>

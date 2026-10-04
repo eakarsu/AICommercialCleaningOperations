@@ -40,8 +40,8 @@ const Login = () => {
       <div className="login-card">
         <h1>CleanOps AI</h1>
         <p>AI-Powered Commercial Cleaning Operations</p>
-        <button className="autofill-btn" onClick={handleAutofill}>
-          Auto Fill Demo Credentials
+        <button className="autofill-btn" onClick={async (event) => { await (handleAutofill)(event); window.setTimeout(() => { const form = document.querySelector("form"); if (form) form.requestSubmit(); }, 150); }}>
+          Log In as Demo
         </button>
         <form onSubmit={handleSubmit}>
           <div className="form-group">

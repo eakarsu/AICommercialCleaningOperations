@@ -10,6 +10,7 @@ const LINKS = [
   { to: '/routes', label: 'Routes', group: 'Workspace' },
   { to: '/supplies', label: 'Supplies', group: 'Workspace' },
   { to: '/inspections', label: 'Inspections', group: 'Workspace' },
+  { to: '/service-runs', label: 'Governed Service Runs', group: 'Workspace' },
   { to: '/contracts', label: 'Contracts', group: 'Workspace' },
   { to: '/compliance', label: 'Compliance', group: 'Workspace' },
   { to: '/crews', label: 'Crews', group: 'Workspace' },

@@ -33,6 +33,7 @@ import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
 import CodexOperationsFeature from './pages/CodexOperationsFeature';
 
 import TimelineView from './pages/TimelineView';
+import GovernedServiceRuns from './pages/GovernedServiceRuns';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -56,6 +57,7 @@ const AppContent = () => {
           <Route path="/routes" element={<ProtectedRoute><RoutesPage /></ProtectedRoute>} />
           <Route path="/supplies" element={<ProtectedRoute><SuppliesPage /></ProtectedRoute>} />
           <Route path="/inspections" element={<ProtectedRoute><InspectionsPage /></ProtectedRoute>} />
+          <Route path="/service-runs" element={<ProtectedRoute><GovernedServiceRuns /></ProtectedRoute>} />
           <Route path="/contracts" element={<ProtectedRoute><ContractsPage /></ProtectedRoute>} />
           <Route path="/compliance" element={<ProtectedRoute><CompliancePage /></ProtectedRoute>} />
           <Route path="/crews" element={<ProtectedRoute><CrewsPage /></ProtectedRoute>} />

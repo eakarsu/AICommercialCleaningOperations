@@ -1,3 +1,4 @@
+import AIReportLibrary from "./components/AIReportLibrary";
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -43,7 +44,7 @@ const ProtectedRoute = ({ children }) => {
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   return (
-    <div className={isAuthenticated ? 'app codex-nav-shell' : 'app'}>
+    <><AIReportLibrary floating /><div className={isAuthenticated ? 'app codex-nav-shell' : 'app'}>
       {isAuthenticated && <AppSidebar />}
       {isAuthenticated && <Navbar />}
       <main className={isAuthenticated ? 'main-content' : ''}>
@@ -78,7 +79,7 @@ const AppContent = () => {
         </Routes>
       </main>
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-    </div>
+    </div></>
   );
 };
 

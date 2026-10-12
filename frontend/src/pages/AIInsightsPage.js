@@ -1,9 +1,13 @@
+
+import FullAIExamples, { useFullAIExamples } from "../components/FullAIExamples.jsx";
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import AIOutput from '../components/AIOutput';
 import { toast } from 'react-toastify';
 
 const AIInsightsPage = () => {
+  const fullAIExamples = useFullAIExamples();
+
   const [tab, setTab] = useState('client-retention');
   const [clients, setClients] = useState([]);
   const [crews, setCrews] = useState([]);
@@ -160,10 +164,10 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'client-retention' && (
-        <form onSubmit={runRetention} className="form-row" style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }}>
+        <form onSubmit={runRetention} className="form-row" style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Client</label>
-            <select value={clientId} onChange={e => setClientId(e.target.value)} className="form-input" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }}>
+            <select value={clientId} onChange={e => setClientId(e.target.value)} className="form-input" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: clientId, change: e => setClientId(e.target.value), label: "clientId", manual: false, json: false, sample: '' }, "p1-7125", undefined)}>
               <option value="">-- choose client --</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
             </select>
@@ -175,17 +179,17 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'crew-performance' && (
-        <form onSubmit={runCrew} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }}>
+        <form onSubmit={runCrew} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Crew</label>
-            <select value={crewId} onChange={e => setCrewId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }}>
+            <select value={crewId} onChange={e => setCrewId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: crewId, change: e => setCrewId(e.target.value), label: "crewId", manual: false, json: false, sample: '' }, "p1-8227", undefined)}>
               <option value="">-- choose crew --</option>
               {crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Days</label>
-            <input type="number" min={1} max={365} value={periodDays} onChange={e => setPeriodDays(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="number" min={1} max={365} value={periodDays} onChange={e => setPeriodDays(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: periodDays, change: e => setPeriodDays(e.target.value), label: "periodDays", manual: false, json: false, sample: 30 }, "p1-8772", undefined)} />
           </div>
           <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'wait' : 'pointer' }}>
             {loading ? 'Analyzing...' : 'Run Performance Analysis'}
@@ -194,16 +198,16 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'energy-audit' && (
-        <form onSubmit={runEnergy} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }}>
+        <form onSubmit={runEnergy} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Location</label>
             {locationOptions.length > 0 ? (
-              <select value={locationId} onChange={e => setLocationId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }}>
+              <select value={locationId} onChange={e => setLocationId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: locationId, change: e => setLocationId(e.target.value), label: "locationId", manual: false, json: false, sample: '' }, "p1-9737", undefined)}>
                 <option value="">-- choose location --</option>
                 {locationOptions.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             ) : (
-              <input type="text" value={locationId} onChange={e => setLocationId(e.target.value)} placeholder="Location ID or name" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+              <input type="text" value={locationId} onChange={e => setLocationId(e.target.value)} placeholder="Location ID or name" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: locationId, change: e => setLocationId(e.target.value), label: "locationId", manual: false, json: false, sample: '' }, "p1-10168", undefined)} />
             )}
           </div>
           <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'wait' : 'pointer' }}>
@@ -213,14 +217,14 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'optimize-routes' && (
-        <form onSubmit={runOptimizeRoutes} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <form onSubmit={runOptimizeRoutes} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Date (optional)</label>
-            <input type="date" value={routeDate} onChange={e => setRouteDate(e.target.value)} style={{ padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="date" value={routeDate} onChange={e => setRouteDate(e.target.value)} style={{ padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: routeDate, change: e => setRouteDate(e.target.value), label: "routeDate", manual: false, json: false, sample: '' }, "p1-11123", undefined)} />
           </div>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Crew (optional)</label>
-            <select value={routeCrewId} onChange={e => setRouteCrewId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }}>
+            <select value={routeCrewId} onChange={e => setRouteCrewId(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: routeCrewId, change: e => setRouteCrewId(e.target.value), label: "routeCrewId", manual: false, json: false, sample: '' }, "p1-11560", undefined)}>
               <option value="">-- all active crews --</option>
               {crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -232,18 +236,18 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'compliance-advisor' && (
-        <form onSubmit={runComplianceAdvisor} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+        <form onSubmit={runComplianceAdvisor} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Topic</label>
-            <input type="text" value={complianceTopic} onChange={e => setComplianceTopic(e.target.value)} placeholder="e.g. floor stripping safety, OSHA HAZCOM" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="text" value={complianceTopic} onChange={e => setComplianceTopic(e.target.value)} placeholder="e.g. floor stripping safety, OSHA HAZCOM" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: complianceTopic, change: e => setComplianceTopic(e.target.value), label: "complianceTopic", manual: false, json: false, sample: '' }, "p1-12603", undefined)} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Jurisdiction</label>
-            <input type="text" value={complianceJurisdiction} onChange={e => setComplianceJurisdiction(e.target.value)} placeholder="e.g. California, US Federal" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="text" value={complianceJurisdiction} onChange={e => setComplianceJurisdiction(e.target.value)} placeholder="e.g. California, US Federal" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: complianceJurisdiction, change: e => setComplianceJurisdiction(e.target.value), label: "complianceJurisdiction", manual: false, json: false, sample: '' }, "p1-13080", undefined)} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Chemicals (comma-separated)</label>
-            <input type="text" value={complianceChemicals} onChange={e => setComplianceChemicals(e.target.value)} placeholder="bleach, ammonia, isopropanol" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="text" value={complianceChemicals} onChange={e => setComplianceChemicals(e.target.value)} placeholder="bleach, ammonia, isopropanol" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: complianceChemicals, change: e => setComplianceChemicals(e.target.value), label: "complianceChemicals", manual: false, json: false, sample: '' }, "p1-13573", undefined)} />
           </div>
           <div>
             <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'wait' : 'pointer' }}>
@@ -254,18 +258,18 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'inspection-analysis' && (
-        <form onSubmit={runInspectionAnalysis} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <form onSubmit={runInspectionAnalysis} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Inspection ID (optional)</label>
-            <input type="text" value={inspectionId} onChange={e => setInspectionId(e.target.value)} placeholder="e.g. 42" style={{ padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="text" value={inspectionId} onChange={e => setInspectionId(e.target.value)} placeholder="e.g. 42" style={{ padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: inspectionId, change: e => setInspectionId(e.target.value), label: "inspectionId", manual: false, json: false, sample: '' }, "p1-14603", undefined)} />
           </div>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Location (optional)</label>
-            <input type="text" value={inspectionLocation} onChange={e => setInspectionLocation(e.target.value)} placeholder="Location name" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="text" value={inspectionLocation} onChange={e => setInspectionLocation(e.target.value)} placeholder="Location name" style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: inspectionLocation, change: e => setInspectionLocation(e.target.value), label: "inspectionLocation", manual: false, json: false, sample: '' }, "p1-15072", undefined)} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Lookback Days</label>
-            <input type="number" min={1} max={365} value={inspectionDays} onChange={e => setInspectionDays(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="number" min={1} max={365} value={inspectionDays} onChange={e => setInspectionDays(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: inspectionDays, change: e => setInspectionDays(e.target.value), label: "inspectionDays", manual: false, json: false, sample: 60 }, "p1-15529", undefined)} />
           </div>
           <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'wait' : 'pointer' }}>
             {loading ? 'Analyzing...' : 'Run Inspection Analysis'}
@@ -274,10 +278,10 @@ const AIInsightsPage = () => {
       )}
 
       {tab === 'supply-forecast' && (
-        <form onSubmit={runSupplyForecast} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <form onSubmit={runSupplyForecast} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }} data-full-ai-workspace="AIInsightsPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
           <div style={{ flex: 1, minWidth: '200px' }}>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Category (optional)</label>
-            <select value={supplyCategory} onChange={e => setSupplyCategory(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }}>
+            <select value={supplyCategory} onChange={e => setSupplyCategory(e.target.value)} style={{ width: '100%', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: supplyCategory, change: e => setSupplyCategory(e.target.value), label: "supplyCategory", manual: false, json: false, sample: '' }, "p1-16514", undefined)}>
               <option value="">-- all categories --</option>
               <option value="chemicals">chemicals</option>
               <option value="equipment">equipment</option>
@@ -288,7 +292,7 @@ const AIInsightsPage = () => {
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '4px', color: '#cbd5e1', fontSize: '13px' }}>Horizon Days</label>
-            <input type="number" min={7} max={180} value={supplyHorizon} onChange={e => setSupplyHorizon(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} />
+            <input type="number" min={7} max={180} value={supplyHorizon} onChange={e => setSupplyHorizon(e.target.value)} style={{ width: '100px', padding: '8px', background: 'rgba(15,23,42,0.6)', color: '#fff', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '6px' }} data-full-ai-field={fullAIExamples.bind({ current: supplyHorizon, change: e => setSupplyHorizon(e.target.value), label: "supplyHorizon", manual: false, json: false, sample: 30 }, "p1-17289", undefined)} />
           </div>
           <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', cursor: loading ? 'wait' : 'pointer' }}>
             {loading ? 'Forecasting...' : 'Forecast Replenishment'}
@@ -302,19 +306,15 @@ const AIInsightsPage = () => {
         <div style={{ marginTop: '20px' }}>
           <AIOutput
             data={{
-              content: JSON.stringify(
-                result.ai_retention_analysis ||
-                result.ai_performance_analysis ||
-                result.ai_energy_analysis ||
-                result.ai_dispatch_plan ||
-                result.ai_compliance_advice ||
-                result.ai_inspection_analysis ||
-                result.ai_supply_forecast ||
-                result.analysis ||
+              content: result.ai_retention_analysis ??
+                result.ai_performance_analysis ??
+                result.ai_energy_analysis ??
+                result.ai_dispatch_plan ??
+                result.ai_compliance_advice ??
+                result.ai_inspection_analysis ??
+                result.ai_supply_forecast ??
+                result.analysis ??
                 result,
-                null,
-                2
-              ),
               model: result.model,
               usage: result.usage
             }}

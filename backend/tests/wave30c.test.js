@@ -1,0 +1,25 @@
+'use strict';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'wave30c-test-secret-at-least-32-chars!!';
+const test=require('node:test'); const assert=require('node:assert/strict');
+const express=require('express'); const jwt=require('jsonwebtoken');
+const {createWave30cRouter}=require('../routes/wave30c');
+const {renderAiSections,toCSV,filterRecords}=require('../domain/wave30c');
+const auth=require('../middleware/auth');
+const records=[{id:1,title:'Alpha',status:'open',genre:'x',name:'Alpha'},{id:2,title:'',status:'done',genre:'y',name:''}];
+async function boot(){ const app=express(); app.use(express.json()); app.use('/wave30c',createWave30cRouter({auth:auth,loadRecords:async()=>records,features:["work-order-triage", "crew-workload-balance", "client-retention-signals"],searchFields:['title','name']})); const srv=app.listen(0); await new Promise(r=>srv.once('listening',r)); return {srv,base:`http://127.0.0.1:${srv.address().port}/wave30c`,tok:jwt.sign({id:7},process.env.JWT_SECRET)}; }
+test('tasks require auth and support list/create/update',async(t)=>{ const {srv,base,tok}=await boot(); t.after(()=>srv.close());
+  assert.equal((await fetch(`${base}/tasks`)).status,401);
+  const created=await (await fetch(`${base}/tasks`,{method:'POST',headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},body:JSON.stringify({title:'Do it'})})).json();
+  assert.equal(created.title,'Do it');
+  const upd=await (await fetch(`${base}/tasks/${created.id}`,{method:'PUT',headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},body:JSON.stringify({status:'done'})})).json();
+  assert.equal(upd.status,'done');
+  assert.equal((await (await fetch(`${base}/tasks`,{headers:{Authorization:`Bearer ${tok}`}})).json()).data.length,1); });
+test('search/filter and CSV/JSON export',async(t)=>{ const {srv,base,tok}=await boot(); t.after(()=>srv.close()); const h={Authorization:`Bearer ${tok}`};
+  assert.equal((await (await fetch(`${base}/records?search=alpha`,{headers:h})).json()).total,1);
+  assert.match(await (await fetch(`${base}/records/export?format=csv`,{headers:h})).text(),/Alpha/);
+  assert.equal((await (await fetch(`${base}/records/export?format=json`,{headers:h})).json()).data.length,2); });
+test('AI fallback is labelled aiGenerated:false and render preserves false/0/empty',async(t)=>{ delete process.env.OPENROUTER_API_KEY; delete process.env.OPENAI_API_KEY; const {srv,base,tok}=await boot(); t.after(()=>srv.close());
+  const body=await (await fetch(`${base}/ai/work-order-triage`,{method:'POST',headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},body:JSON.stringify({})})).json();
+  assert.equal(body.aiGenerated,false); assert.equal(body.sections.recordCount,2); assert.match(body.rendered,/AI generated: false/); assert.match(body.rendered,/recordCount: 2/);
+  assert.match(renderAiSections({aiGenerated:false,sections:{count:0,label:'',items:[]}}),/count: 0/); assert.match(renderAiSections({aiGenerated:false,sections:{count:0}}),/AI generated: false/);
+  assert.equal(filterRecords(records,{status:'done'},['title']).length,1); assert.match(toCSV(records),/Alpha/); });

@@ -10,7 +10,13 @@ router.get('/', auth, async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
+    const { Op } = require('sequelize');
+    const where = {};
+    if (req.query.status) where.status = req.query.status;
+    if (req.query.priority) where.priority = req.query.priority;
+    if (req.query.search) { const s = { [Op.iLike]: `%${req.query.search}%` }; where[Op.or] = [{ title: s }, { client_name: s }, { location: s }]; }
     const { count, rows } = await WorkOrder.findAndCountAll({
+      where,
       order: [['scheduled_date', 'DESC']],
       limit,
       offset
